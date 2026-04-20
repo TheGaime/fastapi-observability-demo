@@ -1,0 +1,7 @@
+services:
+  demo:
+    build: .
+    ports:
+      - "8011:8011"
+    env_file:
+      - .env

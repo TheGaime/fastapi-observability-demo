@@ -16,10 +16,13 @@ class JsonFormatter(logging.Formatter):
             "app": settings.app_name,
             "env": settings.app_env,
         }
+
         if hasattr(record, "extra_fields") and isinstance(record.extra_fields, dict):
             payload.update(record.extra_fields)
+
         if record.exc_info:
             payload["exception"] = self.formatException(record.exc_info)
+
         return json.dumps(payload, ensure_ascii=False)
 
 

@@ -7,7 +7,11 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     log_level: str = "INFO"
     metrics_enabled: bool = True
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
 
 
 settings = Settings()

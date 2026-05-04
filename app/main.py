@@ -8,7 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from .config import settings
 from .logging_config import setup_logging
-from .metrics import REQUEST_COUNT, ERROR_COUNT, REQUEST_LATENCY, metrics_response
+from .metrics import ERROR_COUNT, REQUEST_COUNT, REQUEST_LATENCY, metrics_response
 
 
 setup_logging()
@@ -34,16 +34,26 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             raise
         finally:
             duration = time.perf_counter() - started
-            REQUEST_LATENCY.labels(method=method, path=path).observe(duration)
             status = locals().get("status_code", "500")
-            REQUEST_COUNT.labels(method=method, path=path, status_code=status).inc()
+
+            REQUEST_LATENCY.labels(method=method, path=path).observe(duration)
+            REQUEST_COUNT.labels(
+                method=method,
+                path=path,
+                status_code=status,
+            ).inc()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(
         "service_starting",
-        extra={"extra_fields": {"version": settings.app_version, "env": settings.app_env}},
+        extra={
+            "extra_fields": {
+                "version": settings.app_version,
+                "env": settings.app_env,
+            }
+        },
     )
     yield
     logger.info("service_stopping")
@@ -54,6 +64,7 @@ app = FastAPI(
     version=settings.app_version,
     lifespan=lifespan,
 )
+
 app.add_middleware(MetricsMiddleware)
 
 
@@ -79,7 +90,12 @@ async def ready():
 async def log_test():
     logger.info(
         "manual_log_test",
-        extra={"extra_fields": {"endpoint": "/log-test", "note": "structured log emitted"}},
+        extra={
+            "extra_fields": {
+                "endpoint": "/log-test",
+                "note": "structured log emitted",
+            }
+        },
     )
     return {"logged": True}
 
@@ -92,4 +108,7 @@ async def error_test():
 @app.get("/metrics")
 async def metrics():
     body, content_type = metrics_response()
-    return PlainTextResponse(content=body.decode("utf-8"), media_type=content_type)
+    return PlainTextResponse(
+        content=body.decode("utf-8"),
+        media_type=content_type,
+    )
